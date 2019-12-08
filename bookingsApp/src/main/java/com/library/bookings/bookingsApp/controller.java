@@ -1,5 +1,7 @@
 package com.library.bookings.bookingsApp;
 
+import java.util.List;
+
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
@@ -16,24 +18,28 @@ import com.netflix.ribbon.proxy.annotation.Http.HttpMethod;
 @RestController
 @RequestMapping(value="/bookings")
 public class controller {
+	private repository resp;
 	@Autowired
 	RestTemplate restTemplate;
 	bookings bk=new bookings();
 	@RequestMapping(value="/newbooking",method= RequestMethod.POST)
-	public String newbooking(@RequestBody ObjectId user,@RequestBody ObjectId book,@RequestBody String dateIssue,@RequestBody String dateReturn) {
+	public String newbooking(@RequestBody bookings bk) {
 		
 		String username=restTemplate.exchange("https://library_service/get_user/{user}",
-				HttpMethod.GET,null,new ParameterizedTypeReference<String>() {},user).getBody();
+				HttpMethod.GET,null,new ParameterizedTypeReference<String>() {},bk.userid.toHexString()).getBody();
 		String bookname=restTemplate.exchange("https://library_service/get_bookname/{book}",
-				HttpMethod.GET,null,new ParameterizedTypeReference<String>() {},book).getBody();
+				HttpMethod.GET,null,new ParameterizedTypeReference<String>() {},bk.bookid.toHexString()).getBody();
 		bk.bookid=ObjectId.get();
-		bk.userid=user;restTemplate.
-		bk.bookid=book;
-		bk.dateIssue=dateIssue;
-		bk.dateReturn=dateReturn;
 		String s=bookname+" Issued to "+ username;
+		resp.save(bk);
 		return s;
 		}
+	
+	@RequestMapping(value="/allbookings")
+	public List<bookings> allbooks(){
+		
+		return resp.findAll();
+	}
 	@Bean
 	@LoadBalanced
 	public RestTemplate restTemplate() {
